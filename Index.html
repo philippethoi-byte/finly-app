@@ -143,17 +143,8 @@
         <div class="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth">
             
             <div id="view-dashboard" class="view-section active space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Tổng tài sản</p>
-                                <h3 class="text-2xl font-bold mt-1">125.500.000 ₫</h3>
-                            </div>
-                            <div class="p-2 bg-brand-50 dark:bg-brand-900/30 rounded-lg text-brand-500"><i data-lucide="landmark" class="w-5 h-5"></i></div>
-                        </div>
-                        <p class="text-xs text-success flex items-center mt-3 font-medium"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +5.2% so với tháng trước</p>
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+
                     
                     <div class="bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
                         <div class="flex justify-between items-start">
@@ -369,6 +360,28 @@
 						<span>Thêm gói mới</span>
 					</button>
 				</div>
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-2">
+				    <div class="bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Tổng tài sản</p>
+                                <h3 class="text-2xl font-bold mt-1">125.500.000 ₫</h3>
+                            </div>
+                            <div class="p-2 bg-brand-50 dark:bg-brand-900/30 rounded-lg text-brand-500"><i data-lucide="landmark" class="w-5 h-5"></i></div>
+                        </div>
+                        <p class="text-xs text-success flex items-center mt-3 font-medium"><i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +5.2% so với tháng trước</p>
+                    </div>
+					<div class="bg-white dark:bg-dark-card p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-dark-border">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Số dư khả dụng</p>
+                                <h3 class="text-2xl font-bold mt-1">26.800.000 ₫</h3>
+                            </div>
+                            <div class="p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg text-purple-500"><i data-lucide="piggy-bank" class="w-5 h-5"></i></div>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-3">Sẵn sàng để tiết kiệm</p>
+                    </div>
+				</div>	
 				<div id="savings-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 				</div>
 			</div>
@@ -444,6 +457,7 @@
                         <select id="select-category" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border bg-gray-50 dark:bg-dark-bg text-sm focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
                             <option>Ăn uống</option>
                             <option>Di chuyển</option>
+							<option>Hiếu hỉ</option>
                             <option>Mua sắm</option>
                             <option>Giải trí</option>
                             <option>Nhà cửa</option>
@@ -476,7 +490,7 @@
     let chartDataCache = { trend: null, dashBreakdown: null };
 
     const categories = {
-        expense: ['Ăn uống', 'Di chuyển', 'Nhà ở', 'Mua sắm', 'Giải trí', 'Sức khỏe', 'Giáo dục', 'Khác'],
+        expense: ['Ăn uống', 'Hiếu hỉ', 'Di chuyển', 'Nhà ở', 'Mua sắm', 'Giải trí', 'Sức khỏe', 'Giáo dục', 'Khác'],
         income: ['Tiền lương', 'Tiền thưởng', 'Kinh doanh', 'Đầu tư', 'Khác']
     };
 
