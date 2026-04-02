@@ -9,11 +9,12 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "lowdb": "^7.0.1",
-    "nanoid": "^5.0.7"
-  },
+  "@supabase/supabase-js": "^2.x.x",
+  "dotenv": "^16.x.x",
+  "nanoid": "^5.x.x",
+  "express": "^4.x.x",
+  "cors": "^2.x.x"
+},
   "devDependencies": {
     "nodemon": "^3.1.0"
   }
