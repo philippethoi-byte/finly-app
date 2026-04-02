@@ -1,127 +1,7 @@
 {
   "transactions": [
-    {
-      "id": "tx-20260402-dhnvd4",
-      "date": "2026-04-02",
-      "type": "expense",
-      "amount": 50000,
-      "category": "Ăn uống",
-      "source": "",
-      "description": "Ăn phở gà",
-      "goalId": null,
-      "createdAt": "2026-04-02T05:44:19.129Z"
-    },
-    {
-      "id": "tx-20260402-ggeqjm",
-      "date": "2026-04-02",
-      "type": "expense",
-      "amount": 100000,
-      "category": "Ăn uống",
-      "source": "Tiền mặt",
-      "description": "Ăn trưa",
-      "goalId": null,
-      "createdAt": "2026-04-02T07:11:47.772Z"
-    },
-    {
-      "id": "tx-20260402-9vo6qy",
-      "date": "2026-04-02",
-      "type": "expense",
-      "amount": 2000000,
-      "category": "Khác",
-      "source": "Tiền mặt",
-      "description": "tặng mẹ",
-      "goalId": null,
-      "createdAt": "2026-04-02T08:29:24.835Z"
-    },
-    {
-      "id": "tx-20260402-w10s_o",
-      "date": "2026-04-02",
-      "type": "expense",
-      "amount": 200000,
-      "category": "Di chuyển",
-      "source": "Tiền mặt",
-      "description": "Đi grad đi làm",
-      "goalId": null,
-      "createdAt": "2026-04-02T08:49:02.701Z"
-    },
-    {
-      "id": "tx-20260402-lrmbup",
-      "date": "2026-04-02",
-      "type": "income",
-      "amount": 1000000,
-      "category": "Đầu tư",
-      "source": "Vietcombank",
-      "description": "lãi cổ phiếu",
-      "goalId": null,
-      "createdAt": "2026-04-02T08:49:36.442Z"
-    },
-    {
-      "id": "tx-20260402-j_7uke",
-      "date": "2026-04-02",
-      "type": "expense",
-      "amount": 1000000,
-      "category": "Sức khỏe",
-      "source": "Tiền mặt",
-      "description": "khám bệnh",
-      "goalId": null,
-      "createdAt": "2026-04-02T10:08:23.848Z"
-    },
-    {
-      "id": "tx-20260401-lvvzqy",
-      "date": "2026-04-01",
-      "type": "income",
-      "amount": 10000000,
-      "category": "Tiền lương",
-      "source": "Vietcombank",
-      "description": "Lương tháng 3",
-      "goalId": null,
-      "createdAt": "2026-04-02T07:12:22.037Z"
-    },
-    {
-      "id": "tx-20260401-mm2vhv",
-      "date": "2026-04-01",
-      "type": "expense",
-      "amount": 2000000,
-      "category": "Nhà ở",
-      "source": "Tiền mặt",
-      "description": "thuê nhà",
-      "goalId": null,
-      "createdAt": "2026-04-02T09:21:26.147Z"
-    }
   ],
   "budgets": {
-    "2026-04": {
-      "Ăn uống": {
-        "budgetAmount": 4000000,
-        "spent": 150000
-      },
-      "Khác": {
-        "budgetAmount": 3000000,
-        "spent": 2000000
-      },
-      "Di chuyển": {
-        "budgetAmount": 500000,
-        "spent": 200000
-      },
-      "Nhà ở": {
-        "budgetAmount": 4000000,
-        "spent": 2000000
-      },
-      "Giải trí": {
-        "budgetAmount": 1000000,
-        "spent": 0
-      },
-      "Sức khỏe": {
-        "budgetAmount": 0,
-        "spent": 1000000
-      }
-    },
-    "2026-03": {
-      "Nhà ở": {
-        "budgetAmount": 0,
-        "spent": 0
-      }
-    }
   },
   "goals": [],
   "settings": {
@@ -143,6 +23,7 @@
       "Ăn uống",
       "Di chuyển",
       "Tiền thuê nhà",
+	  "Hiếu hỉ",
       "Điện nước & Internet",
       "Mua sắm cá nhân",
       "Giải trí",
@@ -155,13 +36,5 @@
     ]
   },
   "savings": [
-    {
-      "id": "sav-1775123965649",
-      "name": "TPB Bank - 1 tháng",
-      "type": "savings",
-      "interestRate": 4.5,
-      "amount": 10000000,
-      "maturityDate": "2026-05-02"
-    }
   ]
 }
