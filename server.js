@@ -85,7 +85,23 @@ const syncFinances = async () => {
   await db.write();
 };
 
+// Thêm API đăng nhập vào server.js
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
 
+  // Lấy ngày hiện tại định dạng DDMMYYYY
+  const now = new Date();
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const correctPassword = `admin_${dd}${mm}${yyyy}`;
+
+  if (username === 'Admin' && password === correctPassword) {
+    res.json({ success: true, message: "Đăng nhập thành công" });
+  } else {
+    res.status(401).json({ success: false, message: "Sai tài khoản hoặc mật khẩu" });
+  }
+});
 // ==========================================
 // 3. API ROUTES
 // ==========================================

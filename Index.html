@@ -48,7 +48,34 @@
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-dark-bg dark:text-gray-200 h-screen overflow-hidden flex transition-colors duration-300 antialiased">
+	<div id="login-screen" class="fixed inset-0 z-[200] bg-gray-900 flex items-center justify-center p-4">
+		<div class="bg-white dark:bg-dark-card w-full max-w-md rounded-3xl shadow-2xl p-8 space-y-6 border border-gray-100 dark:border-dark-border">
+			<div class="text-center space-y-2">
+				<div class="w-20 h-20 bg-brand-500/10 text-brand-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+					<i data-lucide="shield-check" class="w-10 h-10"></i>
+				</div>
+				<h1 class="text-2xl font-bold text-gray-900 dark:text-white">Hệ thống Finly</h1>
+				<p class="text-gray-500 dark:text-gray-400">Vui lòng đăng nhập để tiếp tục</p>
+			</div>
 
+			<div class="space-y-4">
+				<div>
+					<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1">Tài khoản</label>
+					<input type="text" id="login-user" value="Admin" class="w-full border dark:border-dark-border p-3 rounded-xl bg-gray-50 dark:bg-dark-bg outline-none focus:ring-2 focus:ring-brand-500 transition-all">
+				</div>
+				<div>
+					<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 ml-1">Mật khẩu</label>
+					<input type="password" id="login-pass" placeholder="admin_DDMMYYYY" class="w-full border dark:border-dark-border p-3 rounded-xl bg-gray-50 dark:bg-dark-bg outline-none focus:ring-2 focus:ring-brand-500 transition-all">
+				</div>
+				<p id="login-error" class="text-danger text-sm text-center hidden">Mật khẩu không chính xác!</p>
+				<button onclick="handleLogin()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-brand-500/30 flex items-center justify-center gap-2">
+					<i data-lucide="log-in" class="w-5 h-5"></i>
+					Đăng nhập
+				</button>
+			</div>
+			<p class="text-center text-xs text-gray-400">Dữ liệu được bảo mật bởi hệ thống nội bộ</p>
+		</div>
+	</div>
     <aside class="w-64 bg-white dark:bg-dark-card border-r border-gray-200 dark:border-dark-border hidden md:flex flex-col justify-between transition-colors duration-300">
         <div>
             <div class="h-16 flex items-center px-6 border-b border-gray-200 dark:border-dark-border">
@@ -529,6 +556,73 @@
     }
 
     function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+	
+	// 1. Hàm xử lý đăng nhập
+async function handleLogin() {
+    const username = document.getElementById('login-user').value;
+    const password = document.getElementById('login-pass').value;
+    const errorEl = document.getElementById('login-error');
+
+    const res = await fetch(`${API_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+        // Lưu trạng thái đã đăng nhập vào LocalStorage
+        localStorage.setItem('finly_authenticated', 'true');
+        // Lưu ngày đăng nhập để yêu cầu đăng nhập lại vào ngày hôm sau
+        localStorage.setItem('finly_login_date', new Date().toDateString());
+        
+        document.getElementById('login-screen').classList.add('hidden');
+        loadDashboard(); // Tải dữ liệu sau khi đăng nhập thành công
+    } else {
+        errorEl.classList.remove('hidden');
+        document.getElementById('login-pass').value = '';
+    }
+}
+
+	// 2. Hàm kiểm tra trạng thái khi vừa mở trang (Chạy trong DOMContentLoaded)
+	function checkAuth() {
+		const isAuthenticated = localStorage.getItem('finly_authenticated');
+		const loginDate = localStorage.getItem('finly_login_date');
+		const today = new Date().toDateString();
+
+		// Nếu đã đăng nhập và vẫn trong cùng một ngày thì cho qua
+		if (isAuthenticated === 'true' && loginDate === today) {
+			document.getElementById('login-screen').classList.add('hidden');
+			return true;
+		} else {
+			// Nếu qua ngày mới, bắt đăng nhập lại
+			localStorage.removeItem('finly_authenticated');
+			document.getElementById('login-screen').classList.remove('hidden');
+			return false;
+		}
+	}
+
+	// 3. Hàm Đăng xuất (Có thể thêm vào Menu nếu muốn)
+	function handleLogout() {
+		localStorage.removeItem('finly_authenticated');
+		location.reload();
+	}
+
+	// Cập nhật sự kiện DOMContentLoaded hiện tại của bạn
+	document.addEventListener('DOMContentLoaded', () => {
+		if (checkAuth()) {
+			switchTransTab('expense');
+			loadDashboard();
+		}
+		
+		// Thêm sự kiện Enter để đăng nhập
+		document.getElementById('login-pass').addEventListener('keypress', (e) => {
+			if (e.key === 'Enter') handleLogin();
+		});
+
+		// ... (các logic tìm kiếm/filter cũ của bạn)
+	});
 
     function switchTransTab(type) {
         currentTransType = type;
