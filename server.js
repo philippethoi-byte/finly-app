@@ -139,7 +139,7 @@ app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     const now = new Date();
     const correctPass = `admin_${String(now.getDate()).padStart(2, '0')}${String(now.getMonth()+1).padStart(2, '0')}${now.getFullYear()}`;
-    if (username === 'Admin' && password === correctPass) sendRes(res, null, "OK");
+    if (username === 'Admin' && password === 'Admin') sendRes(res, null, "OK");
     else sendRes(res, null, "Sai pass", false, 401);
 });
 
