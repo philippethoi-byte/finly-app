@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -11,169 +12,141 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error("❌ Thiếu cấu hình Supabase!");
-  process.exit(1);
-}
+// --- HELPER: Cấu trúc phản hồi thống nhất ---
+const sendRes = (res, data, message = '', success = true, status = 200) => 
+    res.status(status).json({ success, data, message });
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// --- I. GIAO DỊCH (TRANSACTIONS) ---
 
-// --- HELPERS ---
-const sendResponse = (res, data = null, message = '') => {
-  res.status(200).json({ success: true, data, message });
-};
-
-const sendError = (res, status, message, errorDetails = null) => {
-  console.error(`[Error] ${message}`, errorDetails || '');
-  res.status(status).json({ success: false, message });
-};
-
-// Hàm bổ trợ để tạo range ngày tháng (Quan trọng để fix lỗi 0đ)
-const getDateRange = (year, month) => {
-  const start = `${year}-${String(month).padStart(2, '0')}-01`;
-  const nextMonth = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
-  const nextYear = parseInt(month) === 12 ? parseInt(year) + 1 : year;
-  const end = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
-  return { start, end };
-};
-
-// --- ROUTES ---
-
-app.get('/', (req, res) => res.send("Finly API is running perfectly!"));
-
-// 1. Đăng nhập với mật khẩu chuẩn hóa ngày tháng
-app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  const now = new Date();
-  const dd = String(now.getDate()).padStart(2, '0');
-  const mm = String(now.getUTCMonth() + 1).padStart(2, '0'); // Tháng trong JS từ 0-11
-  const yyyy = now.getFullYear();
-  
-  const correctPassword = `admin_${dd}${mm}${yyyy}`;
-
-  if (username === 'Admin' && password === correctPassword) {
-    sendResponse(res, { token: 'fake-jwt-token', user: 'Admin' }, "Đăng nhập thành công");
-  } else {
-    sendError(res, 401, "Sai tài khoản hoặc mật khẩu hôm nay");
-  }
-});
-
-// 2. Lấy Dashboard Summary (Đã fix Query)
-app.get('/api/dashboard/summary', (req, res) => {
-  const { month, year } = req.query;
-  const targetMonth = `${year}-${String(month).padStart(2, '0')}`;
-  
-  let totalBalance = 0;
-  let allTimeIncome = 0;
-  let totalIncome = 0;
-  let totalExpense = 0;
-  const expenseByCategory = {};
-
-  // Tính toán Dòng tiền
-  db.data.transactions.forEach(t => {
-    // Tiền mặt hiện có (Toàn thời gian)
-    if (t.type === 'income') {
-      totalBalance += t.amount;
-      allTimeIncome += t.amount;
-    } else {
-      totalBalance -= t.amount;
-    }
-
-    // Tiền mặt theo Tháng được chọn
-    if (t.date.startsWith(targetMonth)) {
-      if (t.type === 'income') {
-        totalIncome += t.amount;
-      } else {
-        totalExpense += t.amount;
-        expenseByCategory[t.category] = (expenseByCategory[t.category] || 0) + t.amount;
-      }
-    }
-  });
-
-  // Tính Tổng tiền Tiết kiệm/Đầu tư (Cộng dồn từ cả Savings và Goals)
-  const planSavings = db.data.savings ? db.data.savings.reduce((sum, s) => sum + Number(s.amount), 0) : 0;
-  const goalSavings = db.data.goals ? db.data.goals.reduce((s, g) => s + (Number(g.currentAmount) || 0), 0) : 0;
-  const totalSavings = planSavings + goalSavings;
-
-  // Trả về đầy đủ Variables cho Frontend
-  sendResponse(res, { 
-    totalIncome, 
-    totalExpense, 
-    allTimeIncome, 
-    totalSavings, 
-    totalBalance, // Biến này sửa lỗi NaN
-    expenseByCategory 
-  });
-});
-
-// 3. Lấy danh sách giao dịch (Đã tối ưu filter)
+// Lấy danh sách + Tìm kiếm
 app.get('/api/transactions', async (req, res) => {
-  try {
-    const { type, month, year } = req.query;
-    let query = supabase.from('transactions').select('*').order('date', { ascending: false });
+    try {
+        const { search, type } = req.query;
+        let query = supabase.from('transactions').select('*').order('date', { ascending: false });
+        if (type && type !== 'all') query = query.eq('type', type);
+        if (search) query = query.ilike('description', `%${search}%`);
 
-    if (type && type !== 'all') {
-      query = query.eq('type', type);
-    }
-
-    if (month && year) {
-      const { start, end } = getDateRange(year, month);
-      query = query.gte('date', start).lt('date', end);
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-    sendResponse(res, data);
-  } catch (error) {
-    sendError(res, 500, "Lỗi khi lấy danh sách giao dịch", error);
-  }
+        const { data, error } = await query;
+        if (error) throw error;
+        sendRes(res, data);
+    } catch (e) { sendRes(res, null, e.message, false, 500); }
 });
 
-// 4. Thêm giao dịch mới
+// Thêm mới
 app.post('/api/transactions', async (req, res) => {
-  try {
-    const { date, type, amount, category, source, description } = req.body;
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert([{ date, type, amount: Number(amount), category, source, description }])
-      .select();
-
-    if (error) throw error;
-    sendResponse(res, data[0], "Thêm giao dịch thành công");
-  } catch (error) {
-    sendError(res, 500, "Lỗi khi lưu giao dịch", error);
-  }
+    try {
+        const record = { ...req.body, id: crypto.randomUUID() };
+        const { data, error } = await supabase.from('transactions').insert([record]).select();
+        if (error) throw error;
+        sendRes(res, data[0], "Đã thêm giao dịch");
+    } catch (e) { sendRes(res, null, e.message, false, 400); }
 });
 
-// 5. Báo cáo phân bổ (Category Breakdown)
-app.get('/api/reports/category-breakdown', async (req, res) => {
-  try {
-    const { type, month, year } = req.query;
-    const { start, end } = getDateRange(year, month);
-
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('amount, category')
-      .eq('type', type)
-      .gte('date', start)
-      .lt('date', end);
-
-    if (error) throw error;
-
-    const breakdown = {};
-    data.forEach(t => {
-      breakdown[t.category] = (breakdown[t.category] || 0) + Number(t.amount);
-    });
-
-    sendResponse(res, breakdown);
-  } catch (error) {
-    sendError(res, 500, "Lỗi khi tạo báo cáo", error);
-  }
+// Cập nhật
+app.put('/api/transactions/:id', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('transactions').update(req.body).eq('id', req.params.id).select();
+        if (error) throw error;
+        sendRes(res, data[0], "Đã cập nhật giao dịch");
+    } catch (e) { sendRes(res, null, e.message, false, 400); }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Finly API is running on http://localhost:${PORT}`);
+// Xóa
+app.delete('/api/transactions/:id', async (req, res) => {
+    try {
+        const { error } = await supabase.from('transactions').delete().eq('id', req.params.id);
+        if (error) throw error;
+        sendRes(res, null, "Đã xóa giao dịch");
+    } catch (e) { sendRes(res, null, e.message, false, 400); }
 });
+
+// --- II. TIẾT KIỆM (SAVINGS) ---
+
+app.get('/api/savings', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('savings').select('*').order('maturity_date', { ascending: true });
+        if (error) throw error;
+        sendRes(res, data);
+    } catch (e) { sendRes(res, null, e.message, false, 500); }
+});
+
+app.post('/api/savings', async (req, res) => {
+    try {
+        const record = { ...req.body, id: crypto.randomUUID() };
+        const { data, error } = await supabase.from('savings').insert([record]).select();
+        if (error) throw error;
+        sendRes(res, data[0], "Đã thêm gói tiết kiệm");
+    } catch (e) { sendRes(res, null, e.message, false, 400); }
+});
+
+app.put('/api/savings/:id', async (req, res) => {
+    try {
+        const { data, error } = await supabase.from('savings').update(req.body).eq('id', req.params.id).select();
+        if (error) throw error;
+        sendRes(res, data[0], "Đã cập nhật tiết kiệm");
+    } catch (e) { sendRes(res, null, e.message, false, 400); }
+});
+
+app.delete('/api/savings/:id', async (req, res) => {
+    try {
+        const { error } = await supabase.from('savings').delete().eq('id', req.params.id);
+        if (error) throw error;
+        sendRes(res, null, "Đã xóa gói tiết kiệm");
+    } catch (e) { sendRes(res, null, e.message, false, 400); }
+});
+
+// --- III. BÁO CÁO & DASHBOARD ---
+
+app.get('/api/dashboard/summary', async (req, res) => {
+    try {
+        const { data: txs } = await supabase.from('transactions').select('amount, type, category, date');
+        const { data: savs } = await supabase.from('savings').select('amount');
+
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        let totalBalance = 0, monthlyInc = 0, monthlyExp = 0;
+        const catMap = {};
+
+        txs.forEach(t => {
+            const amt = Number(t.amount);
+            const d = new Date(t.date);
+            const isThisMonth = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+
+            if (t.type === 'income') {
+                totalBalance += amt;
+                if (isThisMonth) monthlyInc += amt;
+            } else {
+                totalBalance -= amt;
+                if (isThisMonth) {
+                    monthlyExp += amt;
+                    catMap[t.category] = (catMap[t.category] || 0) + amt;
+                }
+            }
+        });
+
+        const totalSavings = savs.reduce((sum, s) => sum + Number(s.amount), 0);
+
+        sendRes(res, {
+            balance: totalBalance,
+            monthlyIncome: monthlyInc,
+            monthlyExpense: monthlyExp,
+            totalSavings: totalSavings,
+            totalAssets: totalBalance + totalSavings,
+            categoryBreakdown: catMap
+        });
+    } catch (e) { sendRes(res, null, e.message, false, 500); }
+});
+
+// Lấy danh mục từ app_state
+app.get('/api/categories', async (req, res) => {
+    try {
+        const { data } = await supabase.from('app_state').select('value').eq('key', 'categories').single();
+        sendRes(res, data?.value || { income: [], expense: [] });
+    } catch (e) { sendRes(res, null, e.message, false, 500); }
+});
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
