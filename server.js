@@ -62,48 +62,51 @@ app.post('/api/login', (req, res) => {
 });
 
 // 2. Lấy Dashboard Summary (Đã fix Query)
-app.get('/api/dashboard/summary', async (req, res) => {
-  try {
-    const { month, year } = req.query;
-    const { start, end } = getDateRange(year, month);
+app.get('/api/dashboard/summary', (req, res) => {
+  const { month, year } = req.query;
+  const targetMonth = `${year}-${String(month).padStart(2, '0')}`;
+  
+  let totalBalance = 0;
+  let allTimeIncome = 0;
+  let totalIncome = 0;
+  let totalExpense = 0;
+  const expenseByCategory = {};
 
-    // Lấy dữ liệu tháng hiện tại
-    const { data: currentData, error: currentError } = await supabase
-      .from('transactions')
-      .select('amount, type')
-      .gte('date', start)
-      .lt('date', end);
+  // Tính toán Dòng tiền
+  db.data.transactions.forEach(t => {
+    // Tiền mặt hiện có (Toàn thời gian)
+    if (t.type === 'income') {
+      totalBalance += t.amount;
+      allTimeIncome += t.amount;
+    } else {
+      totalBalance -= t.amount;
+    }
 
-    if (currentError) throw currentError;
+    // Tiền mặt theo Tháng được chọn
+    if (t.date.startsWith(targetMonth)) {
+      if (t.type === 'income') {
+        totalIncome += t.amount;
+      } else {
+        totalExpense += t.amount;
+        expenseByCategory[t.category] = (expenseByCategory[t.category] || 0) + t.amount;
+      }
+    }
+  });
 
-    let totalIncome = 0;
-    let totalExpense = 0;
-    currentData.forEach(t => {
-      if (t.type === 'income') totalIncome += Number(t.amount);
-      if (t.type === 'expense') totalExpense += Number(t.amount);
-    });
+  // Tính Tổng tiền Tiết kiệm/Đầu tư (Cộng dồn từ cả Savings và Goals)
+  const planSavings = db.data.savings ? db.data.savings.reduce((sum, s) => sum + Number(s.amount), 0) : 0;
+  const goalSavings = db.data.goals ? db.data.goals.reduce((s, g) => s + (Number(g.currentAmount) || 0), 0) : 0;
+  const totalSavings = planSavings + goalSavings;
 
-    // Tính tổng số dư (Balance) - Toàn bộ thời gian
-    const { data: allData, error: allError } = await supabase
-      .from('transactions')
-      .select('amount, type');
-    
-    if (allError) throw allError;
-    
-    const totalBalance = allData.reduce((acc, t) => {
-      return t.type === 'income' ? acc + Number(t.amount) : acc - Number(t.amount);
-    }, 0);
-
-    sendResponse(res, {
-      totalIncome,
-      totalExpense,
-      totalBalance,
-      incomeProgress: 75, // Có thể tính toán dựa trên mục tiêu sau này
-      balanceChange: 12 // Giả lập % thay đổi
-    });
-  } catch (error) {
-    sendError(res, 500, "Lỗi server khi lấy dashboard", error);
-  }
+  // Trả về đầy đủ Variables cho Frontend
+  sendResponse(res, { 
+    totalIncome, 
+    totalExpense, 
+    allTimeIncome, 
+    totalSavings, 
+    totalBalance, // Biến này sửa lỗi NaN
+    expenseByCategory 
+  });
 });
 
 // 3. Lấy danh sách giao dịch (Đã tối ưu filter)
